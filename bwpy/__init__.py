@@ -23,12 +23,17 @@ class File(h5py.File):
     def description(self, value):
         if not value.startswith("BRW-File Level3"):
             warnings.warn(
-                "File descriptions must start with 'BRW-File Level3'. Added 'BRW-File Level3 - ' to the description.",
+                "File descriptions must start with 'BRW-File Level3'. Prepended 'BRW-File Level3 - ' to the description.",
                 stacklevel=2,
             )
+            value = "BRW-File Level3 - " + value
         utf8_type = h5py.string_dtype("utf-8", len(value))
         value = np.array(value.encode("utf-8"), dtype=utf8_type)
         self.attrs["Description"] = value
+
+    @property
+    def version(self):
+        return self.attrs["Version"]
 
     def get_channels(self):
         return self.keys()

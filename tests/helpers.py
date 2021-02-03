@@ -11,4 +11,6 @@ def open_sample(sample, *args, **kwargs):
 
 
 def open_sample_copy(sample):
-    return bwpy.File(get_sample_path(sample), mode="w", backing_store=False)
+    return bwpy.File(
+        get_sample_path(sample), mode="w", driver="core", backing_store=False
+    )
