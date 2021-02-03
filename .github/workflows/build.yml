@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9]
 
     steps:
     - uses: actions/checkout@v2
@@ -27,13 +27,13 @@ jobs:
     - name: Install 7zip
       run: |
         sudo add-apt-repository universe
-        sudo apt update
-        sudo apt-get install p7zip-full
-    - name: Download example data
-      run: |
-        wget https://resources.3brain.com/f1/downloads/DataSet_05_Slice_3Sec.7z -o sample.7z
-        7z e sample.bwr -y
-        mv DataSet_05_Slice_3sec.brw tests/test_samples/sample.brw
+        sudo apt-get update
+        sudo apt-get install p7zip-full p7zip-rar
+    # - name: Download example data
+    #   run: |
+    #     wget https://resources.3brain.com/f1/downloads/DataSet_05_Slice_3Sec.7z -O sample.7z
+    #     7z e sample.7z -y
+    #     mv DataSet_05_Slice_3sec.brw tests/test_samples/sample.brw
     - name: Install dependencies & self
       run: |
         python -m pip install --upgrade pip
