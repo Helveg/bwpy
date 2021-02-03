@@ -35,6 +35,8 @@ jobs:
         7z e sample.7z -y
         mv DataSet_05_Slice_3sec.brw tests/test_samples/sample.brw
         ls tests/test_samples
+        echo $PWD
+        echo "$PWD/tests/samples"
     - name: Install dependencies & self
       run: |
         python -m pip install --upgrade pip
