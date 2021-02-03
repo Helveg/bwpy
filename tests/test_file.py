@@ -12,4 +12,4 @@ class TestFileObjects(unittest.TestCase):
 class TestFileObjectProperties(unittest.TestCase):
     def test_description(self):
         with open_sample("truncated_brw.brw", "r") as f:
-            print(f.description)
+            descr = f.description

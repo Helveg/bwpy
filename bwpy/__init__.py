@@ -7,6 +7,10 @@ __version__ = "0.0.1a0"
 
 
 class File(h5py.File):
+    def __new__(cls, *args, **kwargs):
+        # TODO: Take a peek and check whether we should make a BRWFile or BXRFile
+        return super().__new__(cls)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
