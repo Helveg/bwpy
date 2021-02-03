@@ -32,7 +32,7 @@ jobs:
     - name: Download example data
       run: |
         wget https://resources.3brain.com/f1/downloads/DataSet_05_Slice_3Sec.7z -o sample.7z
-        7z e sample.bwr -y
+        7z e sample.7z -y
         mv DataSet_05_Slice_3sec.brw tests/test_samples/sample.brw
     - name: Install dependencies & self
       run: |
