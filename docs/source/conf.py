@@ -57,3 +57,5 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "h5py": ("https://docs.h5py.org/en/stable/", None),
 }
+
+autodoc_mock_imports = ["h5py", "numpy"]
