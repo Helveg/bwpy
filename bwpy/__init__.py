@@ -35,6 +35,19 @@ class File(h5py.File):
     def version(self):
         return self.attrs["Version"]
 
+    @property
+    def guid(self):
+        return self.attrs["GUID"].decode()
 
 
-__all__ = ["File"]
+class BRWFile(File):
+    def _get_descr_prefix(self):
+        return "BRW-File Level3"
+
+
+class BXRFile(File):
+    def _get_descr_prefix(self):
+        return "BXR-File Level2"
+
+
+__all__ = ["File", "BRWFile", "BXRFile"]
