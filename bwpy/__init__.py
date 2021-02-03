@@ -5,14 +5,28 @@ from ._hdf_annotations import requires_write_access
 
 __version__ = "0.0.1a0"
 
-
 class File(h5py.File):
-    def __new__(cls, *args, **kwargs):
-        # TODO: Take a peek and check whether we should make a BRWFile or BXRFile
-        return super().__new__(cls)
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._establish_type()
+
+    @property
+    def type(self):
+        if hasattr(self, "_type"):
+            return self._type
+        self._establish_type()
+        if hasattr(self, "_type"):
+            return self._type
+        else:
+            return None
+
+    def _establish_type(self):
+        if "3BData" in self:
+            self.__class__ = BRWFile
+            self._type = "brw"
+        if "3BResults" in self:
+            self.__class__ = BXRFile
+            self._type = "bxr"
 
     @property
     def description(self):
