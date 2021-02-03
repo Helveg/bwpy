@@ -35,12 +35,14 @@ class File(h5py.File):
     @description.setter
     @requires_write_access
     def description(self, value):
-        if not value.startswith("BRW-File Level3"):
+        prefix = self._get_descr_prefix()
+        if not value.startswith(prefix):
             warnings.warn(
-                "File descriptions must start with 'BRW-File Level3'. Prepended 'BRW-File Level3 - ' to the description.",
+                f"File descriptions must start with '{prefix}'. "
+                + f"Prepended '{prefix} - ' to the description.",
                 stacklevel=2,
             )
-            value = "BRW-File Level3 - " + value
+            value = f"{prefix} - " + value
         utf8_type = h5py.string_dtype("utf-8", len(value))
         value = np.array(value.encode("utf-8"), dtype=utf8_type)
         self.attrs["Description"] = value
