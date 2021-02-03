@@ -35,8 +35,6 @@ class File(h5py.File):
     def version(self):
         return self.attrs["Version"]
 
-    def get_channels(self):
-        return self.keys()
 
 
 __all__ = ["File"]
