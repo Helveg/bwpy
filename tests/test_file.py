@@ -9,6 +9,14 @@ class TestFileObjects(unittest.TestCase):
         with bwpy.File(get_sample_path("truncated_brw.brw"), "r") as file:
             pass
 
+    def test_brw_type(self):
+        with bwpy.File(get_sample_path("truncated_brw.brw"), "r") as file:
+            self.assertEqual("brw", file.type)
+
+    def test_bxr_type(self):
+        with bwpy.File(get_sample_path("sample.bxr"), "r") as file:
+            self.assertEqual("bxr", file.type)
+
 
 class TestFileObjectProperties(unittest.TestCase):
     def test_description(self):
@@ -32,3 +40,9 @@ class TestFileObjectProperties(unittest.TestCase):
             version = f.version
         self.assertEqual(numpy.int32, type(version))
         self.assertEqual(version, 320)
+
+    def test_guid(self):
+        with open_sample("truncated_brw.brw", "r") as f:
+            guid = f.guid
+        self.assertIs(str, type(guid), "GUID should be of type str.")
+        self.assertEqual("cfef184e-a0ea-41af-976b-45dcec62d561", guid)
