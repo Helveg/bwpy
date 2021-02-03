@@ -15,13 +15,13 @@ class TestFileObjectProperties(unittest.TestCase):
         with open_sample("truncated_brw.brw", "r") as f:
             descr = f.description
         self.assertIs(str, type(descr), "Description should be of type str.")
-        with open_sample_copy("truncated_brw") as f:
+        with open_sample_copy("truncated_brw.brw") as f:
             f.description = "BRW-File Level3 - Hi, I'm Elfo"
             descr = f.description
         self.assertEqual(descr, "BRW-File Level3 - Hi, I'm Elfo")
 
     def test_description_prefix(self):
-        with open_sample_copy("truncated_brw") as f:
+        with open_sample_copy("truncated_brw.brw") as f:
             with self.assertWarns(UserWarning):
                 f.description = "Hi, I'm Elfo"
             descr = f.description
