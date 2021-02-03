@@ -28,7 +28,7 @@ jobs:
       run: |
         sudo add-apt-repository universe
         sudo apt update
-        sudo apt-get install p7zip-full
+        sudo apt-get install p7zip-full p7zip-rar
     - name: Download example data
       run: |
         wget https://resources.3brain.com/f1/downloads/DataSet_05_Slice_3Sec.7z -o sample.7z
