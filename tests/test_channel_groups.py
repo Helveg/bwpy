@@ -45,6 +45,20 @@ class TestChannelGroupProperties(unittest.TestCase):
             channels.append("trash")
             self.assertEqual(183, len(group.channels))
 
+    def test_units_property(self):
+        with open_sample(samples.bxr, "r") as f:
+            units = f.get_channel_group(0).units
+            self.assertEqual(70, len(units))
+            self.assertIs(numpy.ndarray, type(units))
+
+    def test_units_property_mutation(self):
+        with open_sample(samples.bxr, "r") as f:
+            group = f.get_channel_group(0)
+            units = group.units
+            u = units[5]
+            units[5] = u + 20
+            self.assertEqual(u, group.units[5])
+
     def test_visible_property(self):
         with open_sample(samples.bxr, "r") as f:
             group = f.get_channel_group(0)
