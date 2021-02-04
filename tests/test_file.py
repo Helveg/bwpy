@@ -46,3 +46,9 @@ class TestFileObjectProperties(unittest.TestCase):
             guid = f.guid
         self.assertIs(str, type(guid), "GUID should be of type str.")
         self.assertEqual("cfef184e-a0ea-41af-976b-45dcec62d561", guid)
+
+
+class TestUserInfo(unittest.TestCase):
+    def test_raw_user_info(self):
+        with open_sample(samples.bxr, "r") as f:
+            rui = f.get_raw_user_info()
