@@ -29,7 +29,7 @@ class TestFileObjectProperties(unittest.TestCase):
         with open_sample_copy(samples.bxr) as f:
             f.description = "BXR-File Level2 - Hi, I'm Elfo"
             descr = f.description
-        self.assertEqual(descr, "BRW-File Level3 - Hi, I'm Elfo")
+        self.assertEqual(descr, "BXR-File Level2 - Hi, I'm Elfo")
 
     def test_description_prefix(self):
         with open_sample_copy(samples.brw) as f:
@@ -54,6 +54,12 @@ class TestFileObjectProperties(unittest.TestCase):
             guid = f.guid
         self.assertIs(str, type(guid), "GUID should be of type str.")
         self.assertEqual("cfef184e-a0ea-41af-976b-45dcec62d561", guid)
+
+    def test_channel_groups_prop(self):
+        with open_sample(samples.bxr, "r") as f:
+            groups = f.channel_groups
+            self.assertEqual(1, len(groups))
+            self.assertIs(bwpy.ChannelGroup, type(groups[0]))
 
 
 class TestUserInfo(unittest.TestCase):
