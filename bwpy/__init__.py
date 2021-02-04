@@ -5,6 +5,7 @@ from ._hdf_annotations import requires_write_access
 
 __version__ = "0.0.1a0"
 
+
 class File(h5py.File):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

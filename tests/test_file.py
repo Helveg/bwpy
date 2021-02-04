@@ -7,6 +7,7 @@ from helpers import get_sample_path, open_sample, open_sample_copy
 brw_sample = "truncated_brw.brw"
 bxr_sample = "truncated_bxr.bxr"
 
+
 class TestFileObjects(unittest.TestCase):
     def test_open_file(self):
         with bwpy.File(get_sample_path(brw_sample), "r") as file:
