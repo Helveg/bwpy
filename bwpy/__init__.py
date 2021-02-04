@@ -53,6 +53,48 @@ class File(h5py.File):
         value = np.array(value.encode("utf-8"), dtype=utf8_type)
         self.attrs["Description"] = value
 
+    @property
+    def bit_depth(self):
+        return self.get_recording_variable("BitDepth")
+
+    @property
+    def experiment_type(self):
+        return self.get_recording_variable("ExperimentType")
+
+    @property
+    def max_volt(self):
+        return self.get_recording_variable("MaxVolt")
+
+    @property
+    def min_volt(self):
+        return self.get_recording_variable("MinVolt")
+
+    @property
+    def n_frames(self):
+        return self.get_recording_variable("NRecFrames")
+
+    @property
+    def sampling_rate(self):
+        return self.get_recording_variable("SamplingRate")
+
+    @property
+    def duration(self):
+        return self.n_frames / self.sampling_rate
+
+    @property
+    def signal_inversion(self):
+        return self.get_recording_variable("SignalInversion")
+
+    def get_recording_variable(self, var):
+        rec_info = self.get_raw_recording_info()
+        rec_vars = rec_info["3BRecVars"]
+        if var not in rec_vars:
+            raise KeyError(f"Recording variable '{var}' not found.")
+        return rec_vars[var][0]
+
+    def get_raw_recording_info(self):
+        return self["3BRecInfo"]
+
     def get_raw_user_info(self):
         return self["3BUserInfo"]
 

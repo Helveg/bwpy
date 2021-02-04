@@ -62,7 +62,58 @@ class TestFileObjectProperties(unittest.TestCase):
             self.assertIs(bwpy.ChannelGroup, type(groups[0]))
 
 
+class TestRecordingInfo(unittest.TestCase):
+    def test_raw_recording_info(self):
+        with open_sample(samples.bxr, "r") as f:
+            raw = f.get_raw_recording_info()
+            self.assertIsNotNone(raw)
+
+    def test_recording_vars(self):
+        with open_sample(samples.bxr, "r") as f:
+            vars = (
+                "BitDepth",
+                "ExperimentType",
+                "MaxVolt",
+                "MinVolt",
+                "NRecFrames",
+                "SamplingRate",
+                "SignalInversion",
+            )
+            values = (12, 0, 4125.0, -4125.0, 8028300, 17855.5020, 1.0)
+            props = (
+                "bit_depth",
+                "experiment_type",
+                "max_volt",
+                "min_volt",
+                "n_frames",
+                "sampling_rate",
+                "signal_inversion",
+                "duration",
+            )
+            prop_values = (12, 0, 4125.0, -4125.0, 8028300, 17855.5020, 1.0, 449.6261)
+            for var, value in zip(vars, values):
+                with self.subTest(recording_variable=var):
+                    if type(value) is float:
+                        self.assertAlmostEqual(
+                            value, f.get_recording_variable(var), places=3
+                        )
+                    else:
+                        self.assertEqual(value, f.get_recording_variable(var))
+            for prop, value in zip(props, prop_values):
+                with self.subTest(property=prop):
+                    if type(value) is float:
+                        self.assertAlmostEqual(value, getattr(f, prop), places=3)
+                    else:
+                        self.assertEqual(value, getattr(f, prop))
+
+    def test_missing_recording_var(self):
+        with open_sample(samples.bxr, "r") as f:
+            with self.assertRaises(KeyError):
+                f.get_recording_variable("ThisReallyShouldntExistInHere")
+
+
 class TestUserInfo(unittest.TestCase):
     def test_raw_user_info(self):
         with open_sample(samples.bxr, "r") as f:
-            rui = f.get_raw_user_info()
+            raw = f.get_raw_user_info()
+            self.assertIsNotNone(raw)
