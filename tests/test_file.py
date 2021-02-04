@@ -35,6 +35,12 @@ class TestFileObjectProperties(unittest.TestCase):
             descr = f.description
         self.assertEqual(descr, "BRW-File Level3 - Hi, I'm Elfo")
 
+    def test_write_description(self):
+        with open_sample(samples.brw, "r") as f:
+            with self.assertRaises(RuntimeError):
+                f.description = "Hi, I'm Elfo"
+
+
     def test_version(self):
         with open_sample(samples.brw, "r") as f:
             version = f.version
