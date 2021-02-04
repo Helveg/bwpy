@@ -26,6 +26,9 @@ class TestFileObjectProperties(unittest.TestCase):
         with open_sample_copy(samples.brw) as f:
             f.description = "BRW-File Level3 - Hi, I'm Elfo"
             descr = f.description
+        with open_sample_copy(samples.bxr) as f:
+            f.description = "BXR-File Level2 - Hi, I'm Elfo"
+            descr = f.description
         self.assertEqual(descr, "BRW-File Level3 - Hi, I'm Elfo")
 
     def test_description_prefix(self):
