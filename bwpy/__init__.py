@@ -16,11 +16,15 @@ class File(h5py.File):
     def type(self):
         if hasattr(self, "_type"):
             return self._type
-        self._establish_type()
-        if hasattr(self, "_type"):
-            return self._type
-        else:
-            return None
+        else:  # pragma: nocover
+            # The type is established in `__init__`, unless the user is writing a new
+            # file which is currently not supported. But just in case they then manage to
+            # write a correct file we can re-check whenever the type is used anywhere.
+            self._establish_type()
+            if hasattr(self, "_type"):
+                return self._type
+            else:
+                return None
 
     def _establish_type(self):
         if "3BData" in self:
@@ -78,7 +82,8 @@ class BXRFile(File):
         return self.get_raw_user_info()["ChsGroups"]
 
     def get_channel_groups(self):
-        return [ChannelGroup._from_bxr(self, data) for data in self.get_raw_channel_groups()]
+        groups = self.get_raw_channel_groups()
+        return [ChannelGroup._from_bxr(self, data) for data in groups]
 
     def get_channel_group_names(self):
         return self.get_raw_channel_groups()["Name"]

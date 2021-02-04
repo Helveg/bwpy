@@ -40,7 +40,6 @@ class TestFileObjectProperties(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 f.description = "Hi, I'm Elfo"
 
-
     def test_version(self):
         with open_sample(samples.brw, "r") as f:
             version = f.version

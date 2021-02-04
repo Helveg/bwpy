@@ -25,6 +25,7 @@ class TestChannelGroups(unittest.TestCase):
             self.assertRaises(KeyError, f.get_channel_group, "Group 2")
             self.assertEqual(183, len(group.channels))
 
+
 class TestChannelGroupProperties(unittest.TestCase):
     def test_name_property(self):
         with open_sample(samples.bxr, "r") as f:
