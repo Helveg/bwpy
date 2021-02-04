@@ -78,23 +78,24 @@ class BXRFile(File):
         return self.get_raw_user_info()["ChsGroups"]
 
     def get_channel_groups(self):
-        return [self._channel_group(i) for i in self.get_raw_channel_groups()]
+        return [ChannelGroup._from_bxr(self, data) for data in self.get_raw_channel_groups()]
 
     def get_channel_group_names(self):
         return self.get_raw_channel_groups()["Name"]
 
     def get_channel_group(self, group_id):
+        groups = self.get_raw_channel_groups()
         try:
             # Try to cast to an int first so that field names can't be used as group names
             id = int(group_id)
-            data = self["ChsGroups"][id]
+            data = groups[id]
         except:
-            for group in self.get_raw_channel_groups():
+            for group in groups:
                 if group["Name"] == group_id:
                     data = group
                     break
             else:
-                raise KeyError(f"Channel group '{group_id}' does not exist.")
+                raise KeyError(f"Channel group '{group_id}' does not exist.") from None
         return ChannelGroup._from_bxr(self, data)
 
 
