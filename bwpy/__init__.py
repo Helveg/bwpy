@@ -83,7 +83,7 @@ class File(h5py.File):
 
     @property
     def signal_inversion(self):
-        return self.get_recording_variable("SignalInversion")
+        return self.get_recording_variable("SignalInversion") == -1
 
     def get_recording_variable(self, var):
         rec_info = self.get_raw_recording_info()
