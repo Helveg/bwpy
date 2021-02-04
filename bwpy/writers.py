@@ -1,4 +1,4 @@
-import itertools, os
+import itertools, os, numpy as np
 from .readers import SpikeReader
 
 
