@@ -4,7 +4,7 @@ import numpy as np
 from ._hdf_annotations import requires_write_access
 from ._channels import Channel, ChannelGroup
 
-__version__ = "0.0.1a0"
+__version__ = "0.1a0"
 
 
 class File(h5py.File):
@@ -119,6 +119,12 @@ class BXRFile(File):
 
     def _get_descr_prefix(self):
         return "BXR-File Level2"
+
+    def get_raw_results(self):
+        return self["3BResults"]
+
+    def get_raw_channel_events(self):
+        return self.get_raw_results()["3BChEvents"]
 
     def get_raw_channel_groups(self):
         return self.get_raw_user_info()["ChsGroups"]

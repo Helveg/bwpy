@@ -117,3 +117,15 @@ class TestUserInfo(unittest.TestCase):
         with open_sample(samples.bxr, "r") as f:
             raw = f.get_raw_user_info()
             self.assertIsNotNone(raw)
+
+
+class TestResults(unittest.TestCase):
+    def test_raw_results(self):
+        with open_sample(samples.bxr, "r") as f:
+            raw = f.get_raw_results()
+            self.assertIsNotNone(raw)
+
+    def test_raw_channel_events(self):
+        with open_sample(samples.bxr, "r") as f:
+            raw = f.get_raw_channel_events()
+            self.assertIsNotNone(raw)
