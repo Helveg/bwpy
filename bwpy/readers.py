@@ -23,7 +23,7 @@ def _wave_iter(decoder, dset, wave_size):
         yield decoder.decode(chunk.reshape(n_chunk_spikes, wave_size))
 
 
-_chunks = None
+_benchmark_chunks = None
 
 
 class ChunkReader:
@@ -64,7 +64,7 @@ class ChunkReader:
         wave_chunks = _wave_iter(self._wave_decoder, events["SpikeForms"], int(wave_size))
         i = 0
         for chunk in zip(time_chunks, wave_chunks, chid_chunks, unit_chunks):
-            if _chunks is not None and i >= _chunks:
+            if _benchmark_chunks is not None and i >= _benchmark_chunks:
                 break
             yield chunk
             i += 1
