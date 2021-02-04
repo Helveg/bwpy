@@ -20,6 +20,22 @@ class ChannelGroup:
         self._color = color
         self._visible = visible
 
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def channels(self):
+        return self._channels.copy()
+
+    @property
+    def color(self):
+        return self._color
+
+    @property
+    def visible(self):
+        return self._visible
+
     @classmethod
     def _from_bxr(cls, bxr, bxr_data):
         channels = Channel._from_bxr_list(bxr, bxr_data["Chs"])
