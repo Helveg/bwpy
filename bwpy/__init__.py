@@ -2,6 +2,7 @@ import h5py
 import warnings
 import numpy as np
 from ._hdf_annotations import requires_write_access
+from ._channels import Channel, ChannelGroup
 
 __version__ = "0.0.1a0"
 
@@ -48,6 +49,9 @@ class File(h5py.File):
         value = np.array(value.encode("utf-8"), dtype=utf8_type)
         self.attrs["Description"] = value
 
+    def get_raw_user_info(self):
+        return self["3BUserInfo"]
+
     @property
     def version(self):
         return self.attrs["Version"]
@@ -63,8 +67,35 @@ class BRWFile(File):
 
 
 class BXRFile(File):
+    @property
+    def channel_groups(self):
+        return self.get_channel_groups()
+
     def _get_descr_prefix(self):
         return "BXR-File Level2"
+
+    def get_raw_channel_groups(self):
+        return self.get_raw_user_info()["ChsGroups"]
+
+    def get_channel_groups(self):
+        return [self._channel_group(i) for i in self.get_raw_channel_groups()]
+
+    def get_channel_group_names(self):
+        return self.get_raw_channel_groups()["Name"]
+
+    def get_channel_group(self, group_id):
+        try:
+            # Try to cast to an int first so that field names can't be used as group names
+            id = int(group_id)
+            data = self["ChsGroups"][id]
+        except:
+            for group in self.get_raw_channel_groups():
+                if group["Name"] == group_id:
+                    data = group
+                    break
+            else:
+                raise KeyError(f"Channel group '{group_id}' does not exist.")
+        return ChannelGroup._from_bxr(self, data)
 
 
 __all__ = ["File", "BRWFile", "BXRFile"]
