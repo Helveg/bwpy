@@ -24,6 +24,6 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=["h5py", "numpy"],
+    install_requires=["h5py<3.0.0", "numpy"],
     extras_require={"dev": ["sphinx", "furo"]},
 )
