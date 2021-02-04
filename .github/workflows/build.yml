@@ -24,16 +24,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
           ${{ runner.os }}-
-    - name: Install 7zip
+    - name: Install apt packages
       run: |
-        sudo add-apt-repository universe
         sudo apt-get update
-        sudo apt-get install p7zip-full p7zip-rar
-    # - name: Download example data
-    #   run: |
-    #     wget https://resources.3brain.com/f1/downloads/DataSet_05_Slice_3Sec.7z -O sample.7z
-    #     7z e sample.7z -y
-    #     mv DataSet_05_Slice_3sec.brw tests/test_samples/sample.brw
+        sudo apt-get install libhdf5-dev
     - name: Install dependencies & self
       run: |
         python -m pip install --upgrade pip
