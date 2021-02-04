@@ -14,9 +14,10 @@ class Channel:
 
 
 class ChannelGroup:
-    def __init__(self, name, channels, color=None, visible=True):
+    def __init__(self, name, channels, units, color=None, visible=True):
         self._name = name
         self._channels = channels
+        self._units = units
         self._color = color
         self._visible = visible
 
@@ -27,6 +28,10 @@ class ChannelGroup:
     @property
     def channels(self):
         return self._channels.copy()
+
+    @property
+    def units(self):
+        return self._units.copy()
 
     @property
     def color(self):
@@ -40,7 +45,13 @@ class ChannelGroup:
     def _from_bxr(cls, bxr, bxr_data):
         channels = Channel._from_bxr_list(bxr, bxr_data["Chs"])
         color = _color_tuple(bxr_data["Color"])
-        return cls(bxr_data["Name"], channels, color, bool(bxr_data["IsVisible"]))
+        return cls(
+            bxr_data["Name"],
+            channels,
+            bxr_data["Units"],
+            color,
+            bool(bxr_data["IsVisible"]),
+        )
 
 
 def _color_tuple(data):
