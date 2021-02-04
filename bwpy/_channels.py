@@ -45,7 +45,13 @@ class ChannelGroup:
     def _from_bxr(cls, bxr, bxr_data):
         channels = Channel._from_bxr_list(bxr, bxr_data["Chs"])
         color = _color_tuple(bxr_data["Color"])
-        return cls(bxr_data["Name"], channels, bxr_data["Units"], color, bool(bxr_data["IsVisible"]))
+        return cls(
+            bxr_data["Name"],
+            channels,
+            bxr_data["Units"],
+            color,
+            bool(bxr_data["IsVisible"]),
+        )
 
 
 def _color_tuple(data):
