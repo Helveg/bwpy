@@ -2,6 +2,15 @@ import os
 import bwpy
 
 
+class Samples:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+
+samples = Samples(brw="truncated_brw.brw", bxr="truncated_bxr.bxr")
+
+
 def get_sample_path(sample):
     return os.path.join(os.path.dirname(__file__), "test_samples", sample)
 

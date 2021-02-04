@@ -2,6 +2,7 @@ import h5py
 import warnings
 import numpy as np
 from ._hdf_annotations import requires_write_access
+from ._channels import Channel, ChannelGroup
 
 __version__ = "0.0.1a0"
 
@@ -15,11 +16,15 @@ class File(h5py.File):
     def type(self):
         if hasattr(self, "_type"):
             return self._type
-        self._establish_type()
-        if hasattr(self, "_type"):
-            return self._type
-        else:
-            return None
+        else:  # pragma: nocover
+            # The type is established in `__init__`, unless the user is writing a new
+            # file which is currently not supported. But just in case they then manage to
+            # write a correct file we can re-check whenever the type is used anywhere.
+            self._establish_type()
+            if hasattr(self, "_type"):
+                return self._type
+            else:
+                return None
 
     def _establish_type(self):
         if "3BData" in self:
@@ -48,6 +53,9 @@ class File(h5py.File):
         value = np.array(value.encode("utf-8"), dtype=utf8_type)
         self.attrs["Description"] = value
 
+    def get_raw_user_info(self):
+        return self["3BUserInfo"]
+
     @property
     def version(self):
         return self.attrs["Version"]
@@ -63,8 +71,37 @@ class BRWFile(File):
 
 
 class BXRFile(File):
+    @property
+    def channel_groups(self):
+        return self.get_channel_groups()
+
     def _get_descr_prefix(self):
         return "BXR-File Level2"
+
+    def get_raw_channel_groups(self):
+        return self.get_raw_user_info()["ChsGroups"]
+
+    def get_channel_groups(self):
+        groups = self.get_raw_channel_groups()
+        return [ChannelGroup._from_bxr(self, data) for data in groups]
+
+    def get_channel_group_names(self):
+        return self.get_raw_channel_groups()["Name"]
+
+    def get_channel_group(self, group_id):
+        groups = self.get_raw_channel_groups()
+        try:
+            # Try to cast to an int first so that field names can't be used as group names
+            id = int(group_id)
+            data = groups[id]
+        except:
+            for group in groups:
+                if group["Name"] == group_id:
+                    data = group
+                    break
+            else:
+                raise KeyError(f"Channel group '{group_id}' does not exist.") from None
+        return ChannelGroup._from_bxr(self, data)
 
 
 __all__ = ["File", "BRWFile", "BXRFile"]
