@@ -33,7 +33,7 @@ class GroupWriter:
             if writers is None:
                 continue
             writers[0].write(f"{spike_time:.18e} ")
-            writers[1].write(np.array2string(waveform) + "\n")
+            writers[1].write(" ".join(f"{w:.18e}" for w in waveform) + "\n")
 
         self._close_writers(_writers)
 
