@@ -27,10 +27,10 @@ class File(h5py.File):
                 return None
 
     def _establish_type(self):
-        if "3BData" in self:
+        if self.description.startswith("BRW"):
             self.__class__ = BRWFile
             self._type = "brw"
-        if "3BResults" in self:
+        if self.description.startswith("BXR"):
             self.__class__ = BXRFile
             self._type = "bxr"
 
