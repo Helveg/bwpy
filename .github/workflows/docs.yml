@@ -18,5 +18,6 @@ jobs:
         python -m pip install pip
         pip install -r docs/requirements.txt
         pip install sphinx
+        pip install -e .
     - name: Build documentations and fail on warnings
       run: cd docs && sphinx-build -nW -b html source build/html
