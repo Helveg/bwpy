@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 from ._hdf_annotations import requires_write_access
 from ._channels import Channel, ChannelGroup
+from .writers import ChannelDemultiplexer
 
 __version__ = "0.1a0"
 
@@ -98,6 +99,9 @@ class File(h5py.File):
     def get_raw_user_info(self):
         return self["3BUserInfo"]
 
+    def get_raw_mea_chip(self):
+        return self.get_raw_recording_info()["3BMeaChip"]
+
     @property
     def version(self):
         return self.attrs["Version"]
@@ -105,6 +109,20 @@ class File(h5py.File):
     @property
     def guid(self):
         return self.attrs["GUID"].decode()
+
+    @requires_write_access
+    def demux(self, *args, progress=False, **kwargs):
+        if progress:
+
+            def print_progress(w, p):
+                print(p.current, "out of", p.total, end="\r")
+
+            l = kwargs.get("listeners", [])
+            l.append(print_progress)
+            kwargs["listeners"] = l
+
+        dm = ChannelDemultiplexer(self, *args, **kwargs)
+        dm.demux()
 
 
 class BRWFile(File):
@@ -117,11 +135,18 @@ class BXRFile(File):
     def channel_groups(self):
         return self.get_channel_groups()
 
+    @property
+    def channels(self):
+        return self.get_channels()
+
     def _get_descr_prefix(self):
         return "BXR-File Level2"
 
     def get_raw_results(self):
         return self["3BResults"]
+
+    def get_raw_result_info(self):
+        return self.get_raw_results()["3BInfo"]
 
     def get_raw_channel_events(self):
         return self.get_raw_results()["3BChEvents"]
@@ -150,6 +175,59 @@ class BXRFile(File):
             else:
                 raise KeyError(f"Channel group '{group_id}' does not exist.") from None
         return ChannelGroup._from_bxr(self, data)
+
+    def get_channel_columns(self):
+        mea_chip = self.get_raw_mea_chip()
+        return mea_chip["NCols"][0]
+
+    def get_channel_rows(self):
+        mea_chip = self.get_raw_mea_chip()
+        return mea_chip["NRows"][0]
+
+    def get_channel_ids(self):
+        mea_chip = self.get_raw_mea_chip()
+        rows = mea_chip["NRows"][0]
+        cols = mea_chip["NCols"][0]
+        return range(rows * cols)
+
+    def get_channels(self):
+        return [self.get_channel(id) for id in self.get_channel_ids()]
+
+    def get_channel(self, id):
+        return Channel(self, id)
+
+    def get_raw_demux_channels(self):
+        if "DemuxedChannels" not in self:
+            raise MissingDemuxError("Data has not been demultiplexed yet. Use `.demux`")
+        return self["DemuxedChannels"]
+
+    def get_raw_demux_channel(self, id):
+        channels = self.get_raw_demux_channels()
+        id = str(int(float(id)))
+        if id not in channels:
+            raise MissingDemuxError(f"Channel {id} is not demultiplexed yet.")
+        return channels[id]
+
+    def get_raw_times(self):
+        return self.get_raw_channel_events()["SpikeTimes"]
+
+    def get_raw_waves(self):
+        return self.get_raw_channel_events()["SpikeForms"]
+
+    def get_raw_units(self):
+        return self.get_raw_channel_events()["SpikeUnits"]
+
+    def get_raw_channels(self):
+        return self.get_raw_channel_events()["SpikeChIDs"]
+
+    def get_wave_chunk_shape(self):
+        return (self.get_chunk_size(), self.get_wave_size())
+
+    def get_chunk_size(self):
+        return self.get_raw_units().chunks[0]
+
+    def get_wave_size(self):
+        return len(self.get_raw_waves()) / len(self.get_raw_units())
 
 
 __all__ = ["File", "BRWFile", "BXRFile"]

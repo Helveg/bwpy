@@ -1,5 +1,72 @@
-import itertools, os, numpy as np
-from .readers import SpikeReader
+import itertools, os, numpy as np, abc
+from .readers import ChunkReader, SpikeReader
+
+
+class WriteProgress:
+    def __init__(self, current, total):
+        self.current = current
+        self.total = total
+
+
+class Demultiplexer(abc.ABC):
+    def __init__(self, bxr, listeners=None):
+        self._bxr = bxr
+        self._listeners = listeners if listeners is not None else []
+
+    @abc.abstractmethod
+    def demux(self):
+        pass
+
+
+class ChannelDemultiplexer(Demultiplexer):
+    def demux(self):
+        reader = ChunkReader(self._bxr)
+        wave_size = reader._bxr.get_wave_size()
+        chunk_size = reader._bxr.get_chunk_size() >> 4
+        sp_shape = (chunk_size,)
+        sp_max_shape = (None,)
+        wv_shape = (chunk_size, wave_size)
+        wv_max_shape = (None, wave_size)
+        channels = self._require_channels()
+        i = 0
+        total = len(reader)
+        self._emit_progress(i, total)
+        for time_chunk, waveform_chunk, channel_chunk, unit_chunk in reader.read():
+            uchannels = np.unique(channel_chunk, axis=0)
+            for uc in uchannels:
+                channel_mask = channel_chunk == uc
+                channel = channels[uc]
+                channel_units = unit_chunk[channel_mask]
+                spikes = time_chunk[channel_mask]
+                waves = waveform_chunk[channel_mask]
+                self._append(channel, "SpikeTimes", spikes, sp_shape, sp_max_shape)
+                self._append(channel, "Waveforms", waves, wv_shape, wv_max_shape)
+            i += 1
+            self._emit_progress(i, total)
+
+    def _require_channels(self):
+        root = self._bxr.require_group("DemuxedChannels")
+        return [self._require_channel(root, channel.id) for channel in self._bxr.channels]
+
+    def _require_channel(self, group, channel_id):
+        return group.require_group(str(channel_id))
+
+    def _append(self, group, name, data, chunk_shape, max_shape, dtype=float):
+        if name not in group:
+            ds = group.create_dataset(
+                name, data=data, chunks=chunk_shape, maxshape=max_shape, dtype=float
+            )
+        else:
+            ds = group[name]
+            ol = len(ds)
+            l = ol + len(data)
+            ds.resize(l, axis=0)
+            ds[ol:] = data
+
+    def _emit_progress(self, current, total):
+        p = WriteProgress(current, total)
+        for l in self._listeners:
+            l(self, p)
 
 
 def _noop_writer(channel):
@@ -13,7 +80,7 @@ class GroupWriter:
         self._group = group
         self._path = path
         self._channel_labels = [
-            l.decode() for l in self._bxr["3BResults/3BInfo/ChIDs2Labels"][()]
+            l.decode() for l in self._bxr.get_raw_result_info()["ChIDs2Labels"][()]
         ]
 
     def get_resource_path(self, channel, unit, suffix=""):

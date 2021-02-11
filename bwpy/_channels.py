@@ -1,16 +1,48 @@
+from ._hdf_annotations import requires_bxr
+
+
 class Channel:
-    def __init__(self, bxr, row, col):
-        self._bxr = bxr
-        self._row = row
-        self._col = col
+    def __init__(self, file, id=None, /, row=None, col=None):
+        self._file = file
+        if id is not None:
+            self._id = id
+        else:
+            cols = self._file.get_channel_columns()
+            self._id = (row - 1) * cols + (col - 1)
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def row(self):
+        cols = self._file.get_channel_columns()
+        return (self._id // cols) + 1
+
+    @property
+    def col(self):
+        cols = self._file.get_channel_columns()
+        return (self._id % cols) + 1
+
+    @property
+    def spike_times(self):
+        return self.get_spike_times()
+
+    @property
+    def waveforms(self):
+        return self.get_waveforms()
+
+    @requires_bxr("_file")
+    def get_spike_times(self):
+        return self._file.get_raw_demux_channel(self.id)["SpikeTimes"][()]
+
+    @requires_bxr("_file")
+    def get_waveforms(self):
+        return self._file.get_raw_demux_channel(self.id)["Waveforms"][()]
 
     @classmethod
-    def _from_bxr_list(cls, bxr, bxr_list):
-        return [cls._from_bxr(bxr, data) for data in bxr_list]
-
-    @classmethod
-    def _from_bxr(cls, bxr, bxr_data):
-        return cls(bxr, bxr_data[0], bxr_data[1])
+    def _from_channelgrouplist(cls, file, file_list):
+        return [cls(file, row=data[0], col=data[1]) for data in file_list]
 
 
 class ChannelGroup:
@@ -43,7 +75,7 @@ class ChannelGroup:
 
     @classmethod
     def _from_bxr(cls, bxr, bxr_data):
-        channels = Channel._from_bxr_list(bxr, bxr_data["Chs"])
+        channels = Channel._from_channelgrouplist(bxr, bxr_data["Chs"])
         color = _color_tuple(bxr_data["Color"])
         return cls(
             bxr_data["Name"],
