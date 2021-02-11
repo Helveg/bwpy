@@ -3,6 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. image:: https://codecov.io/gh/Helveg/bwpy/branch/main/graph/badge.svg?token=OB8U3U8AFW
+   :target: https://codecov.io/gh/Helveg/bwpy
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/psf/black
+
+.. image:: https://github.com/Helveg/bwpy/workflows/Build%20and%20test%20bwpy/badge.svg
+   :target: https://github.com/Helveg/bwpy/actions
+
 Welcome to bwpy's documentation!
 ================================
 
