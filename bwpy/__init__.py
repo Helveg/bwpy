@@ -3,8 +3,8 @@ import warnings
 import numpy as np
 from ._hdf_annotations import requires_write_access
 from ._channels import Channel, ChannelGroup
-from .writers import ChannelDemultiplexer
 from .exceptions import *
+from .writers import ChannelDemultiplexer
 
 __version__ = "0.1a0"
 

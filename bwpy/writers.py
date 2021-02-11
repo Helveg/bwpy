@@ -23,11 +23,8 @@ class ChannelDemultiplexer(Demultiplexer):
         reader = ChunkReader(self._bxr)
         wave_size = reader._bxr.get_wave_size()
         chunk_size = reader._bxr.get_chunk_size() >> 4
-        sp_shape = (chunk_size,)
-        sp_max_shape = (None,)
-        wv_shape = (chunk_size, wave_size)
-        wv_max_shape = (None, wave_size)
-        channels = self._require_channels()
+        shape = (chunk_size, wave_size)
+        channels = self._require_channels(shape)
         i = 0
         total = len(reader)
         self._emit_progress(i, total)
@@ -39,29 +36,45 @@ class ChannelDemultiplexer(Demultiplexer):
                 channel_units = unit_chunk[channel_mask]
                 spikes = time_chunk[channel_mask]
                 waves = waveform_chunk[channel_mask]
-                self._append(channel, "SpikeTimes", spikes, sp_shape, sp_max_shape)
-                self._append(channel, "Waveforms", waves, wv_shape, wv_max_shape)
+                self._append(channel, "SpikeTimes", spikes)
+                self._append(channel, "WaveForms", waves)
             i += 1
             self._emit_progress(i, total)
 
-    def _require_channels(self):
+    def _require_channels(self, shape):
         root = self._bxr.require_group("DemuxedChannels")
-        return [self._require_channel(root, channel.id) for channel in self._bxr.channels]
+        return [
+            self._require_channel(root, channel.id, shape)
+            for channel in self._bxr.channels
+        ]
 
-    def _require_channel(self, group, channel_id):
-        return group.require_group(str(channel_id))
-
-    def _append(self, group, name, data, chunk_shape, max_shape, dtype=float):
-        if name not in group:
-            ds = group.create_dataset(
-                name, data=data, chunks=chunk_shape, maxshape=max_shape, dtype=float
+    def _require_channel(self, group, channel_id, shape):
+        id = str(int(float(channel_id)))
+        channel = group.require_group(id)
+        if "SpikeTimes" not in channel:
+            ds = channel.create_dataset(
+                "SpikeTimes",
+                shape=(0,),
+                chunks=(shape[0],),
+                maxshape=(None,),
+                dtype=float,
             )
-        else:
-            ds = group[name]
-            ol = len(ds)
-            l = ol + len(data)
-            ds.resize(l, axis=0)
-            ds[ol:] = data
+        if "WaveForms" not in channel:
+            ds = channel.create_dataset(
+                "WaveForms",
+                shape=(0, shape[1]),
+                chunks=shape,
+                maxshape=(None, shape[1]),
+                dtype=float,
+            )
+        return channel
+
+    def _append(self, group, name, data):
+        ds = group[name]
+        ol = len(ds)
+        l = ol + len(data)
+        ds.resize(l, axis=0)
+        ds[ol:] = data
 
     def _emit_progress(self, current, total):
         p = WriteProgress(current, total)

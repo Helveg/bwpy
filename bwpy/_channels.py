@@ -38,7 +38,7 @@ class Channel:
 
     @requires_bxr("_file")
     def get_waveforms(self):
-        return self._file.get_raw_demux_channel(self.id)["Waveforms"][()]
+        return self._file.get_raw_demux_channel(self.id)["WaveForms"][()]
 
     @classmethod
     def _from_channelgrouplist(cls, file, file_list):
