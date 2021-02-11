@@ -6,7 +6,7 @@ from ._channels import Channel, ChannelGroup
 from .exceptions import *
 from .writers import ChannelDemultiplexer
 
-__version__ = "0.1a0"
+__version__ = "1.0.0b0"
 
 
 class File(h5py.File):
