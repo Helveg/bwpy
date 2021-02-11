@@ -4,7 +4,6 @@ bwpy package
 .. automodule:: bwpy
    :members:
    :undoc-members:
-   :show-inheritance:
 
 bwpy.decoders module
 --------------------
