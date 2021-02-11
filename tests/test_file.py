@@ -90,7 +90,7 @@ class TestRecordingInfo(unittest.TestCase):
                 "signal_inversion",
                 "duration",
             )
-            prop_values = (12, 0, 4125.0, -4125.0, 8028300, 17855.5020, True, 449.6261)
+            prop_values = (12, 0, 4125.0, -4125.0, 8028300, 17855.5020, False, 449.6261)
             for var, value in zip(vars, values):
                 with self.subTest(recording_variable=var):
                     if type(value) is float:
