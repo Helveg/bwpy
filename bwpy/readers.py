@@ -45,21 +45,15 @@ class ChunkReader:
         self._time_decoder = SpikeTimeDecoder(self._bxr.sampling_rate)
 
     def read(self):
-        _times = self.get_raw_times()
-        _chids = self.get_raw_channels()
-        _units = self.get_raw_units()
-        _wave_forms = self.get_raw_waves()
+        _times = self._bxr.get_raw_times()
+        _chids = self._bxr.get_raw_channels()
+        _units = self._bxr.get_raw_units()
+        _wave_forms = self._bxr.get_raw_waves()
         chunk_size = _chids.chunks
         chid_chunks = _chunk_iter(_chids)
         time_chunks = _chunk_iter(_times, decoder=self._time_decoder)
         unit_chunks = _chunk_iter(_units)
-        # The individual spike wave form size is equal to the total wave form data divided
-        # by the number of spikes recorder
-        wave_size = self.get_wave_size()
-        if round(wave_size) != wave_size:
-            raise RuntimeError(
-                "Corrupted data, wave form data is not chunkable in waveforms."
-            )
+        wave_size = self._bxr.get_wave_size()
         # For each spike an entire waveform of `wave_size` should be loaded
         wave_chunks = _wave_iter(self._wave_decoder, _wave_forms, int(wave_size))
         i = 0
@@ -70,7 +64,7 @@ class ChunkReader:
             i += 1
 
     def __len__(self):
-        set = self.get_raw_times()
+        set = self._bxr.get_raw_times()
         return int(set.shape[0] / set.chunks[0])
 
 

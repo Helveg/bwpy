@@ -4,6 +4,7 @@ import numpy as np
 from ._hdf_annotations import requires_write_access
 from ._channels import Channel, ChannelGroup
 from .writers import ChannelDemultiplexer
+from .exceptions import *
 
 __version__ = "0.1a0"
 
@@ -227,7 +228,12 @@ class BXRFile(File):
         return self.get_raw_units().chunks[0]
 
     def get_wave_size(self):
-        return len(self.get_raw_waves()) / len(self.get_raw_units())
+        wave_size = len(self.get_raw_waves()) / len(self.get_raw_units())
+        if round(wave_size) != wave_size:
+            raise RuntimeError(
+                "Corrupted data, wave form data is not chunkable in waveforms."
+            )
+        return wave_size
 
 
 __all__ = ["File", "BRWFile", "BXRFile"]
