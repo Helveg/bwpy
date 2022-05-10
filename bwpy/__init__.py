@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 from ._hdf_annotations import requires_write_access
 from ._channels import Channel, ChannelGroup
+import functools
 
 __version__ = "0.0.1a0"
 
@@ -107,9 +108,61 @@ class File(h5py.File):
         return self.attrs["GUID"].decode()
 
 
-class BRWFile(File):
+class _Slicer:
+    def __init__(self, slice):
+        self._slice = slice
+
+
+class _TimeSlicer(_Slicer):
+    def __getitem__(self, instruction):
+        return self._slice._time_slice(instruction)
+
+
+class _ChannelSlicer(_Slicer):
+    def __getitem__(self, instruction):
+        return self._slice._channel_slice(instruction)
+
+
+class _Slice:
+    def __init__(self, file):
+        self._file = file
+
+    @property
+    @functools.cache
+    def t(self):
+        return _TimeSlicer(self)
+
+    @property
+    @functools.cache
+    def ch(self):
+        return _ChannelSlicer(self)
+    
+    def _time_slice(self, instruction):
+        print("Requested time slice", instruction)
+    
+    def _channel_slice(self, instruction):
+        print("Requested channel slice", instruction)
+    
+
+class BRWFile(File, _Slice):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _Slice.__init__(self, self)
+
     def _get_descr_prefix(self):
         return "BRW-File Level3"
+
+    @property
+    def channels(self):
+        return self['/3BRecInfo/3BMeaStreams/Raw/Chs']
+
+    @property
+    def data(self):
+        return self['/3BData/Raw']
+
+    @property
+    def channels_layout(self):
+        return self['/3BData/Raw']
 
 
 class BXRFile(File):
