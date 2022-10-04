@@ -1,8 +1,5 @@
 import pathlib
-from sre_constants import SRE_FLAG_UNICODE
-import h5py
 import unittest
-import numpy
 import bwpy
 import numpy as np
 
@@ -23,10 +20,12 @@ class TestFileObjects(unittest.TestCase):
     def test_basic_slicing(self):
         self.assertEqual(self.file.raw.size, self.file.data.size)
         print("get unsliced slice passed")
+        self.assertEqual(True, np.allclose(self.file.t[0].data.reshape(-1), self.convert(self.file.n_channels)))
         self.assertEqual((self.file.n_channels, 1), self.file.t[1].data.shape)
-        print("get channel slice passed")
-        self.assertEqual((1, self.file.n_frames), self.file.ch[1, 1].data.shape)
         print("get time slice passed")
+        self.assertEqual(True, np.allclose(self.file.ch[0, 0].data.reshape(-1), self.convert(self.file.n_channels)))
+        self.assertEqual((1, self.file.n_frames), self.file.ch[1, 1].data.shape)
+        print("get channel slice passed")
 
     def test_concatenate_slicing(self):
         self.assertEqual((60 * 60, 90), self.file.t[:90].ch[0:60, 0:60].data.shape)
