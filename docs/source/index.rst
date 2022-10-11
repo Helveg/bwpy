@@ -33,8 +33,7 @@ BWR and BXR files can be opened as a regular :class:`h5py.File` objects (see `Fi
 
 Slicing
 -------
-The package allows slicing data of files of `.brw` format.  
-Slices are masks that can be applied to the data.
+The package allows slicing data of files of `.brw` format.
 
 Temporal slices can be obtained by calling the property `t`, which is an unidimensional `numpy` array:
 .. code-block:: python
