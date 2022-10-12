@@ -200,6 +200,9 @@ class _Slice:
             start = prev_start + this_start * prev_step
             stop = prev_start + this_stop * prev_step
             step = this_step * prev_step
+            # start: 1, end: 5, step: 1 --> Slice [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] into Slice [1, 2, 3, 4]
+            # start: 0, end: 7, step: 2 --> Slice [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] into Slice [0, 2, 4, 6]
+            # start: 5, end: -1, step: 4 --> Slice [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] into Slice [5, 9]
             return _Slice(self._file, self._channels, slice(start, stop, step))
 
     def _channel_slice(self, instruction):
