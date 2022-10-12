@@ -33,9 +33,8 @@ BWR and BXR files can be opened as a regular :class:`h5py.File` objects (see `Fi
 
 Slicing
 -------
-The package allows slicing data of files of `.brw` format.
 
-Temporal slices can be obtained by calling the property `t`, which is an unidimensional `numpy` array:
+The package allows you to slice the data in `.brw` files. The data can be restricted to certain time samples by indexing the `.t` property like a one-dimensional array:
 .. code-block:: python
 
    import bwpy
@@ -44,7 +43,8 @@ Temporal slices can be obtained by calling the property `t`, which is an unidime
       datafile.t[0:10:2]
       #will return the slice of the first 10 temporal recordings with a step of 2
 
-Channel slices can be obtained by calling the porperty `ch`, which is bi-dimensional `numpy` array:
+The data can be restricted to certain channels by indexing the `.ch` property like a two-dimensional array:
+
 .. code-block:: python
 
    import bwpy
@@ -53,7 +53,8 @@ Channel slices can be obtained by calling the porperty `ch`, which is bi-dimensi
       datafile.ch[0:10, 0: 10]
       #will return the slice of the block of the first 10x10 channels
 
-Slices can be combined:
+The obtained slices can themselves be sliced further:
+
 .. code-block:: python
 
    import bwpy
@@ -62,7 +63,8 @@ Slices can be combined:
       datafile.t[0:10].ch[0, 0]
       #will return the slice of the first 10 temporal recordings of the first channel
 
-When the slicing is completed, it is possible to apply the mask to the data by calling `data` as it follows:
+After slicing, the sliced data can be obtained by accessing the `data` property:
+
 .. code-block:: python
 
    import bwpy
