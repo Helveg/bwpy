@@ -136,6 +136,19 @@ class _ChannelSlicer(_Slicer):
         return slice
 
 
+class Variation:
+    def __init__(self, bin_width):
+        self.offset = offset
+
+    def __call__(self, data):
+        return data + self.offset
+
+
+def variation(slice, *args, **kwargs):
+    slice.transformations.append(Variation(*args, **kwargs))
+    return slice
+
+
 class _Slice:
     def __init__(self, file, channels=None, time=None):
         self._file = file
@@ -145,6 +158,7 @@ class _Slice:
         if time is None:
             time = slice(None)
         self._time = time
+        self._transformations = []
 
     @property
     @functools.cache
@@ -185,10 +199,17 @@ class _Slice:
         for i in range(0, len(time_ind), 1000):
             end_slice = i + 1000
             data[i:end_slice] = self._file.raw[time_ind[i:end_slice]]
-        return self._file.convert(data.reshape((len(mask), -1)))
 
-    def _slice_index(self):
-        return
+        data = self._file.convert(data.reshape((len(mask), -1)))
+        for transformation in self._transformations:
+            try:
+                data = transformation(data, self._file)
+            except Exception as e:
+                raise TransformationError(
+                    f"Error in transformation pipeline {self._transformations}"
+                    f", with {transformation}: {e}"
+                )
+        return data
 
     def _time_slice(self, instruction):
         if isinstance(instruction, int):
@@ -203,10 +224,24 @@ class _Slice:
             # start: 1, end: 5, step: 1 --> Slice [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] into Slice [1, 2, 3, 4]
             # start: 0, end: 7, step: 2 --> Slice [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] into Slice [0, 2, 4, 6]
             # start: 5, end: -1, step: 4 --> Slice [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] into Slice [5, 9]
-            return _Slice(self._file, self._channels, slice(start, stop, step))
+            ret = self._copy_slice()
+            ret._time = slice(start, stop, step)
+            return ret
 
     def _channel_slice(self, instruction):
-        return _Slice(self._file, self._channels[instruction], self._time)
+        ret = self._copy_slice()
+        ret._channels = self._channels[instruction]
+        return ret
+
+    def _transform(self, transformation):
+        ret = self._copy_slice()
+        ret._transformations.append(transformation)
+        return ret
+
+    def _copy_slice(self):
+        copied = _Slice(self._file, self._channels, self._time)
+        copied._transformations = self._transformations.copy()
+        return copied
 
 
 class BRWFile(File, _Slice):
@@ -268,6 +303,10 @@ class BXRFile(File):
             else:
                 raise KeyError(f"Channel group '{group_id}' does not exist.") from None
         return ChannelGroup._from_bxr(self, data)
+
+
+class TransformationError(Exception):
+    pass
 
 
 __all__ = ["File", "BRWFile", "BXRFile"]
