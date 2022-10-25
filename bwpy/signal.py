@@ -31,7 +31,9 @@ class Variation(Transformer):
     def __call__(self, data, file):
         print("We are transforming our data using the", self.__class__.__name__)
         try:
-            return np.amax(data, axis=2) - np.amin(data, axis=2)
+            return np.amax(
+                data.reshape((file.layout.shape[0], file.layout.shape[1], -1)), axis=2
+            ) - np.amin(data, axis=2)
         except np.AxisError:
             return data
 
@@ -39,9 +41,12 @@ class Variation(Transformer):
 class Amplitude(Transformer):
     def __call__(self, data, file):
         print("We are transforming our data using the", self.__class__.__name__)
-        try:
-            return np.amax(data, axis=2)
-        except np.AxisError:
+        print("input data:", data.shape)
+        if data.ndim < 3:
+            return data
+        else:
+            data = np.max(np.abs(data), axis=2)
+            print("out data:", data.shape)
             return data
 
 
@@ -49,6 +54,9 @@ class Energy(Transformer):
     def __call__(self, data, file):
         print("We are transforming our data using the", self.__class__.__name__)
         try:
-            return np.sum(np.square(data), axis=2)
+            return np.sum(
+                np.square(data.reshape((file.layout.shape[0], file.layout.shape[1], -1))),
+                axis=2,
+            )
         except np.AxisError:
             return data

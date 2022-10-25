@@ -200,7 +200,11 @@ class _Slice:
             end_slice = i + 1000
             data[i:end_slice] = self._file.raw[time_ind[i:end_slice]]
 
-        data = self._file.convert(data.reshape((len(mask), -1)))
+        digital = data.reshape((len(mask), -1))
+        analog = self._file.convert(digital)
+        data = analog.reshape((-1, *self._file.layout.shape))
+        data = np.flip(np.rot90(data.swapaxes(2, 0), -1), 1)
+
         for transformation in self._transformations:
             try:
                 data = transformation(data, self._file)
