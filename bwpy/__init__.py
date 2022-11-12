@@ -125,21 +125,16 @@ class _Slicer:
 class _TimeSlicer(_Slicer):
     def __getitem__(self, instruction):
         slice = self._slice._time_slice(instruction)
-        # self._file.n_frames =
         return slice
 
 
 class _ChannelSlicer(_Slicer):
     def __getitem__(self, instruction):
         slice = self._slice._channel_slice(instruction)
-        # self._file.n_channel =
         return slice
 
 
 class Variation:
-    def __init__(self, bin_width):
-        self.offset = offset
-
     def __call__(self, data):
         return data + self.offset
 
@@ -159,6 +154,7 @@ class _Slice:
             time = slice(None)
         self._time = time
         self._transformations = []
+        self.bin_size = 100
 
     @property
     @functools.cache
@@ -202,12 +198,17 @@ class _Slice:
 
         digital = data.reshape((len(mask), -1))
         analog = self._file.convert(digital)
+        # Shape (-1, row, cols) because in the next line we'll swapaxes.
+        # If we used directly shape (row,cols,-1) we would end up with data[:,:,0]:
+        # [0,3,6]            [0,1,2]
+        # [1,4,7] instead of [3,4,5]
+        # [2,5,8]            [6,7,8]
         data = analog.reshape((-1, *self._file.layout.shape))
         data = np.flip(np.rot90(data.swapaxes(2, 0), -1), 1)
 
         for transformation in self._transformations:
             try:
-                data = transformation(data, self._file)
+                data = transformation(data, self._file, self.bin_size)
             except Exception as e:
                 raise TransformationError(
                     f"Error in transformation pipeline {self._transformations}"
@@ -237,9 +238,10 @@ class _Slice:
         ret._channels = self._channels[instruction]
         return ret
 
-    def _transform(self, transformation):
+    def _transform(self, transformation, bin_size):
         ret = self._copy_slice()
         ret._transformations.append(transformation)
+        self.bin_size = bin_size
         return ret
 
     def _copy_slice(self):

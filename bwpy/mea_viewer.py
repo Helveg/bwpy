@@ -1,4 +1,4 @@
-from .signal import *
+from . import signal
 import abc
 import plotly.graph_objects as go
 import numpy as np
@@ -6,28 +6,29 @@ import numpy as np
 
 class Viewer(abc.ABC):
     @abc.abstractmethod
-    def set_up_view(self, slice, bin_size, view_method):
+    def build_view(self, slice, bin_size, view_method):
         pass
 
 
 class MEAViewer(Viewer):
     colorscale = [[0, "#ebe834"], [1.0, "#eb4034"]]
     min_value = 0
-    max_value = 170
+    max_value = 0
 
-    def set_up_view(self, slice, view_method, bin_size=100):
-        sliced_data = slice.data
+    def build_view(self, slice, view_method="amplitude", bin_size=100):
+        self.min_value = slice._file.convert(slice._file.min_volt)
+        self.max_value = slice._file.convert(slice._file.max_volt)
+        # min = -12433, max = 4183
+        self.min_value = 0
+        self.max_value = 170
         fig = go.Figure()
-        for i in range(0, sliced_data.shape[1]):
-            if sliced_data.shape[1] - i < bin:
-                break
-            transform = getattr(signal, view_method)
-            bin = self.ms_to_idx(slice, bin_size)
-            signal = transform(slice._file.t[i : i + bin]).data
+        apply_transformation = getattr(signal, view_method)
+        signals = apply_transformation(slice, bin_size).data
+        for signal_frame in signals:
             fig.add_trace(
                 go.Heatmap(
                     visible=False,
-                    z=signal,
+                    z=signal_frame,
                     zmin=self.min_value,
                     zmax=self.max_value,
                     colorscale=self.colorscale,
@@ -36,7 +37,7 @@ class MEAViewer(Viewer):
         return fig
 
     def ms_to_idx(self, slice, bin_size):
-        return slice._file.n_frames * slice._file.sampling_rate, bin_size
+        return slice._file.n_frames / slice._file.sampling_rate, bin_size
 
     def format_plot(self, fig):
         # Create and add slider
