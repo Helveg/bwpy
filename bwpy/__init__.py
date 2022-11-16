@@ -208,7 +208,7 @@ class _Slice:
 
         for transformation in self._transformations:
             try:
-                data = transformation(data, self._file, self.bin_size)
+                data = transformation(data, self, self._file)
             except Exception as e:
                 raise TransformationError(
                     f"Error in transformation pipeline {self._transformations}"
@@ -238,10 +238,9 @@ class _Slice:
         ret._channels = self._channels[instruction]
         return ret
 
-    def _transform(self, transformation, bin_size):
+    def _transform(self, transformation):
         ret = self._copy_slice()
         ret._transformations.append(transformation)
-        self.bin_size = bin_size
         return ret
 
     def _copy_slice(self):

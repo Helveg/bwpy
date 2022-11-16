@@ -2,6 +2,7 @@ from . import signal
 import abc
 import plotly.graph_objects as go
 import numpy as np
+from scipy.stats import norm
 
 
 class Viewer(abc.ABC):
@@ -16,11 +17,6 @@ class MEAViewer(Viewer):
     max_value = 0
 
     def build_view(self, slice, view_method="amplitude", bin_size=100):
-        self.min_value = slice._file.convert(slice._file.min_volt)
-        self.max_value = slice._file.convert(slice._file.max_volt)
-        # min = -12433, max = 4183
-        self.min_value = 0
-        self.max_value = 170
         fig = go.Figure()
         apply_transformation = getattr(signal, view_method)
         signals = apply_transformation(slice, bin_size).data
@@ -30,14 +26,20 @@ class MEAViewer(Viewer):
                     visible=False,
                     z=signal_frame,
                     zmin=self.min_value,
-                    zmax=self.max_value,
+                    zmax=self.get_up_bound(signals, slice._file),
                     colorscale=self.colorscale,
                 )
             )
-        return fig
+        return self.format_plot(fig)
 
     def ms_to_idx(self, slice, bin_size):
         return slice._file.n_frames / slice._file.sampling_rate, bin_size
+
+    def get_up_bound(self, data, file):
+        up_limit = file.convert(file.max_volt) * 0.98
+        no_artifacts = data[data < up_limit]
+        mu, sd = norm.fit(no_artifacts.reshape(-1))
+        return mu + 2 * sd
 
     def format_plot(self, fig):
         # Create and add slider

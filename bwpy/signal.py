@@ -3,7 +3,6 @@ import abc
 import functools
 import numpy as np
 import numpy.lib.stride_tricks as np_tricks
-from scipy.signal import find_peaks
 
 
 __all__ = []
@@ -11,8 +10,8 @@ __all__ = []
 
 def _transformer_factory(cls):
     @functools.wraps(cls)
-    def transformer_factory(slice, bin_size, *args, **kwargs):
-        return slice._transform(cls(*args, **kwargs), bin_size)
+    def transformer_factory(slice, *args, **kwargs):
+        return slice._transform(cls(*args, **kwargs))
 
     return transformer_factory
 
@@ -35,53 +34,83 @@ class Transformer(abc.ABC):
         )
 
     @abc.abstractmethod
-    def __call__(self, data, file, bin_size):
+    def __call__(self, data, file):
         pass
 
 
 class Variation(Transformer):
-    def __call__(self, data, file, bin_size):
+    def __init__(self, bin_size):
+        self.bin_size = bin_size
+
+    def __call__(self, data, slice, file):
         print("calling ", self.__class__.__name__)
         if data.ndim < 3:
             return data
         else:
-            windows = self._apply_window(data, bin_size)
+            windows = self._apply_window(data, self.bin_size)
             return np.max(np.abs(windows), axis=3) - np.min(np.abs(windows), axis=3)
 
 
 class Amplitude(Transformer):
-    def __call__(self, data, file, bin_size):
+    def __init__(self, bin_size):
+        self.bin_size = bin_size
+
+    def __call__(self, data, slice, file):
         print("calling ", self.__class__.__name__)
         if data.ndim < 3:
             return data
         else:
-            windows = self._apply_window(data, bin_size)
+            windows = self._apply_window(data, self.bin_size)
             return np.max(np.abs(windows), axis=3)
 
 
 class Energy(Transformer):
-    def __call__(self, data, file, bin_size):
+    def __init__(self, bin_size):
+        self.bin_size = bin_size
+
+    def __call__(self, data, slice, file):
         print("calling ", self.__class__.__name__)
         if data.ndim < 3:
             return data
         else:
-            windows = self._apply_window(data, bin_size)
+            windows = self._apply_window(data, self.bin_size)
             return np.sum(np.square(windows), axis=3)
 
 
 class Raw(Transformer):
-    def __call__(self, data, file, bin_size):
+    def __call__(self, data, slice, file):
         print("calling ", self.__class__.__name__)
         return np.moveaxis(data, 2, 0)
 
 
 class DetectArtifacts(Transformer):
-    def __call__(self, data, file, bin_size):
-        n_channels = file.layout.shape[0] * file.layout.shape[1]
-        artifacts = []
-        out_bounds = data > 170
+    def __call__(self, data, slice, file):
+        print("calling ", self.__class__.__name__)
+        if data.ndim < 3:
+            return data
+        else:
+            up_limit = file.convert(file.max_volt) * 0.98
+            out_bounds = data > up_limit
+            mask = np.sum(out_bounds, axis=(1, 2)) > 80
+            return mask
 
-        for i in range(len(data)):
-            if np.count_nonzero(out_bounds[i]) / n_channels > 0.8:
-                artifacts.append(i)
-        return artifacts
+
+class Shutter(Transformer):
+    def __init__(self, data, delay_ms):
+        self.delay_ms = delay_ms
+        self.data = data
+
+    def __call__(self, mask, slice, file):
+        print("calling ", self.__class__.__name__)
+        if mask.ndim > 1:
+            raise ValueError("mask must be a 1dim array.")
+
+        delay = self.ms_to_idx(file, self.delay_ms)
+        for i in range(len(mask) - 1, 0, -1):
+            if mask[i]:
+                mask[i : i + delay] = 1
+
+        return self.data[mask]
+
+    def ms_to_idx(self, file, delay_ms):
+        return int(delay_ms * file.sampling_rate * 1000)
