@@ -204,7 +204,8 @@ class _Slice:
         # [1,4,7] instead of [3,4,5]
         # [2,5,8]            [6,7,8]
         data = analog.reshape((-1, *self._file.layout.shape))
-        data = np.flip(np.rot90(data.swapaxes(2, 0), -1), 1)
+        # in the line above we have [frame, rows, cols], with the line below we get [rows, cols, frame]
+        # data = np.flip(np.rot90(data.swapaxes(2, 0), -1), 1)
 
         for transformation in self._transformations:
             try:
