@@ -1,3 +1,4 @@
+from . import mea_viewer
 import re
 import abc
 import functools
@@ -24,13 +25,13 @@ class Transformer(abc.ABC):
         __all__.append(name)
 
     def _apply_window(self, data, bin_size):
-        rows = data.shape[0]
-        cols = data.shape[1]
-        window_shape = (rows, cols, bin_size)
+        rows = data.shape[1]
+        cols = data.shape[2]
+        window_shape = (bin_size, rows, cols)
         # sliding window returns more complex shape like (num_windows, 1, 1, rows, cols, bin_size)
         # with the reshape we get rid of the unnecessary complexity (1, 1)
         return np_tricks.sliding_window_view(data, window_shape).reshape(
-            -1, rows, cols, bin_size
+            -1, bin_size, rows, cols
         )
 
     @abc.abstractmethod
@@ -48,7 +49,7 @@ class Variation(Transformer):
             return data
         else:
             windows = self._apply_window(data, self.bin_size)
-            return np.max(np.abs(windows), axis=3) - np.min(np.abs(windows), axis=3)
+            return np.max(np.abs(windows), axis=1) - np.min(np.abs(windows), axis=1)
 
 
 class Amplitude(Transformer):
@@ -61,7 +62,7 @@ class Amplitude(Transformer):
             return data
         else:
             windows = self._apply_window(data, self.bin_size)
-            return np.max(np.abs(windows), axis=3)
+            return np.max(np.abs(windows), axis=1)
 
 
 class Energy(Transformer):
@@ -74,13 +75,19 @@ class Energy(Transformer):
             return data
         else:
             windows = self._apply_window(data, self.bin_size)
-            return np.sum(np.square(windows), axis=3)
+            return np.sum(np.square(windows), axis=1)
 
 
 class Raw(Transformer):
     def __call__(self, data, slice, file):
         print("calling ", self.__class__.__name__)
         return np.moveaxis(data, 2, 0)
+
+
+class NoMethod(Transformer):
+    def __call__(self, data, slice, file):
+        print("calling ", self.__class__.__name__)
+        return data
 
 
 class DetectArtifacts(Transformer):
@@ -96,9 +103,10 @@ class DetectArtifacts(Transformer):
 
 
 class Shutter(Transformer):
-    def __init__(self, data, delay_ms):
+    def __init__(self, data, delay_ms, callable=None):
         self.delay_ms = delay_ms
         self.data = data
+        self.callable = callable
 
     def __call__(self, mask, slice, file):
         print("calling ", self.__class__.__name__)
@@ -109,8 +117,17 @@ class Shutter(Transformer):
         for i in range(len(mask) - 1, 0, -1):
             if mask[i]:
                 mask[i : i + delay] = 1
+        masked_data = self.data[mask]
 
-        return self.data[mask]
+        bin_size = self.ms_to_idx(file, 100)
+        mea_viewer.MEAViewer().build_view(
+            file, data=masked_data, view_method="no_method", bin_size=bin_size
+        ).show()
+
+        if self.callable:
+            return self.callable(self.data, mask)
+        else:
+            return masked_data
 
     def ms_to_idx(self, file, delay_ms):
         return int(delay_ms * file.sampling_rate * 1000)
