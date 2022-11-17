@@ -16,17 +16,25 @@ class MEAViewer(Viewer):
     min_value = 0
     max_value = 0
 
-    def build_view(self, slice, view_method="amplitude", bin_size=100):
+    def build_view(
+        self, file, slice=None, view_method="amplitude", bin_size=100, data=None
+    ):
         fig = go.Figure()
-        apply_transformation = getattr(signal, view_method)
-        signals = apply_transformation(slice, bin_size).data
+        if slice and data:
+            raise ValueError("slice and data arguments are mutually exclusives.")
+        if slice:
+            apply_transformation = getattr(signal, view_method)
+            signals = apply_transformation(slice, bin_size).data
+        else:
+            signals = data
+
         for signal_frame in signals:
             fig.add_trace(
                 go.Heatmap(
                     visible=False,
                     z=signal_frame,
                     zmin=self.min_value,
-                    zmax=self.get_up_bound(signals, slice._file),
+                    zmax=self.get_up_bound(signals, file),
                     colorscale=self.colorscale,
                 )
             )
