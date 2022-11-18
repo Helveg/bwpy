@@ -46,7 +46,6 @@ class Variation(WindowedTransformer):
         self.window_size = window_size
 
     def __call__(self, data, slice, file):
-        print("calling ", self.__class__.__name__)
         # If data have only 2 dimensions windowing is not necessary
         if data.ndim == 2:
             return data
@@ -60,7 +59,6 @@ class Amplitude(WindowedTransformer):
         self.window_size = window_size
 
     def __call__(self, data, slice, file):
-        print("calling ", self.__class__.__name__)
         # If data have only 2 dimensions windowing is not necessary
         if data.ndim == 2:
             return data
@@ -74,8 +72,6 @@ class Energy(WindowedTransformer):
         self.window_size = window_size
 
     def __call__(self, data, slice, file):
-        print("calling ", self.__class__.__name__)
-        # If data have only 2 dimensions windowing is not necessary
         if data.ndim == 2:
             return data
         else:
@@ -85,13 +81,18 @@ class Energy(WindowedTransformer):
 
 class NoMethod(Transformer):
     def __call__(self, data, slice, file):
-        print("calling ", self.__class__.__name__)
+        return np.moveaxis(data, 2, 0)
+
+
+class Noop(Transformer):
+    """Noop that doesn't transform the data at all."""
+
+    def __call__(self, data, slice, file):
         return data
 
 
 class DetectArtifacts(WindowedTransformer):
     def __call__(self, data, slice, file):
-        print("calling ", self.__class__.__name__)
         # If data have only 2 dimensions windowing is not necessary
         if data.ndim == 2:
             return data
@@ -109,7 +110,6 @@ class Shutter(Transformer):
         self.callable = callable
 
     def __call__(self, mask, slice, file):
-        print("calling ", self.__class__.__name__)
         if mask.ndim > 1:
             raise ValueError("mask must be a 1dim array.")
 

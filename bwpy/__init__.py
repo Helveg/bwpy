@@ -31,11 +31,12 @@ class File(h5py.File):
         if self.description.startswith("BRW"):
             self.__class__ = BRWFile
             self._type = "brw"
-            self.__post_init__()
-        if self.description.startswith("BXR"):
+        elif self.description.startswith("BXR"):
             self.__class__ = BXRFile
             self._type = "bxr"
-            self.__post_init__()
+        else:
+            raise IOError("File is not in BXR/BRW format")
+        self.__post_init__()
 
     @property
     def description(self):
@@ -53,6 +54,7 @@ class File(h5py.File):
             )
             value = f"{prefix} - " + value
         utf8_type = h5py.string_dtype("utf-8", len(value))
+        value = np.array(value.encode("utf-8"), dtype=utf8_type)
         value = np.array(value.encode("utf-8"), dtype=utf8_type)
         self.attrs["Description"] = value
 
