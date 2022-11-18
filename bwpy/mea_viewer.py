@@ -1,47 +1,48 @@
 from . import signal
 import abc
-import plotly.graph_objects as go
-import numpy as np
 from scipy.stats import norm
 
 
 class Viewer(abc.ABC):
     @abc.abstractmethod
-    def build_view(self, slice, bin_size, view_method):
+    def build_view(self, slice, wiew_method, window_size):
         pass
 
 
 class MEAViewer(Viewer):
     colorscale = [[0, "#ebe834"], [1.0, "#eb4034"]]
-    min_value = 0
-    max_value = 0
 
     def build_view(
-        self, file, slice=None, view_method="amplitude", bin_size=100, data=None
+        self, file, slice=None, view_method="amplitude", window_size=100, data=None
     ):
+        try:
+            import plotly.graph_objects as go
+        except:
+            raise ModuleNotFoundError(
+                "You have to install plotly in order to use MEAViewer."
+            )
+
         fig = go.Figure()
         if slice and data:
             raise ValueError("slice and data arguments are mutually exclusives.")
         if slice:
             apply_transformation = getattr(signal, view_method)
-            signals = apply_transformation(slice, bin_size).data
+            signals = apply_transformation(slice, window_size).data
         else:
             signals = data
 
+        max_val = self.get_up_bound(signals, file)
         for signal_frame in signals:
             fig.add_trace(
                 go.Heatmap(
                     visible=False,
                     z=signal_frame,
-                    zmin=self.min_value,
-                    zmax=self.get_up_bound(signals, file),
+                    zmin=0,
+                    zmax=max_val,
                     colorscale=self.colorscale,
                 )
             )
         return self.format_plot(fig)
-
-    def ms_to_idx(self, slice, bin_size):
-        return slice._file.n_frames / slice._file.sampling_rate, bin_size
 
     def get_up_bound(self, data, file):
         up_limit = file.convert(file.max_volt) * 0.98

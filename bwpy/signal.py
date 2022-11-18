@@ -24,64 +24,63 @@ class Transformer(abc.ABC):
         globals()[name] = _transformer_factory(cls)
         __all__.append(name)
 
-    def _apply_window(self, data, bin_size):
-        rows = data.shape[1]
-        cols = data.shape[2]
-        window_shape = (bin_size, rows, cols)
-        # sliding window returns more complex shape like (num_windows, 1, 1, rows, cols, bin_size)
-        # with the reshape we get rid of the unnecessary complexity (1, 1)
-        return np_tricks.sliding_window_view(data, window_shape).reshape(
-            -1, bin_size, rows, cols
-        )
-
     @abc.abstractmethod
     def __call__(self, data, file):
         pass
 
 
-class Variation(Transformer):
-    def __init__(self, bin_size):
-        self.bin_size = bin_size
+class WindowedTransformer(Transformer):
+    def get_signal_window(self, data, window_size):
+        rows = data.shape[1]
+        cols = data.shape[2]
+        window_shape = (window_size, rows, cols)
+        # sliding window returns more complex shape like (num_windows, 1, 1, rows, cols, window_size)
+        # with the reshape we get rid of the unnecessary complexity (1, 1)
+        return np_tricks.sliding_window_view(data, window_shape).reshape(
+            -1, window_size, rows, cols
+        )
+
+
+class Variation(WindowedTransformer):
+    def __init__(self, window_size):
+        self.window_size = window_size
 
     def __call__(self, data, slice, file):
         print("calling ", self.__class__.__name__)
-        if data.ndim < 3:
+        # If data have only 2 dimensions windowing is not necessary
+        if data.ndim == 2:
             return data
         else:
-            windows = self._apply_window(data, self.bin_size)
+            windows = self.get_signal_window(data, self.window_size)
             return np.max(np.abs(windows), axis=1) - np.min(np.abs(windows), axis=1)
 
 
-class Amplitude(Transformer):
-    def __init__(self, bin_size):
-        self.bin_size = bin_size
+class Amplitude(WindowedTransformer):
+    def __init__(self, window_size):
+        self.window_size = window_size
 
     def __call__(self, data, slice, file):
         print("calling ", self.__class__.__name__)
-        if data.ndim < 3:
+        # If data have only 2 dimensions windowing is not necessary
+        if data.ndim == 2:
             return data
         else:
-            windows = self._apply_window(data, self.bin_size)
+            windows = self.get_signal_window(data, self.window_size)
             return np.max(np.abs(windows), axis=1)
 
 
-class Energy(Transformer):
-    def __init__(self, bin_size):
-        self.bin_size = bin_size
+class Energy(WindowedTransformer):
+    def __init__(self, window_size):
+        self.window_size = window_size
 
     def __call__(self, data, slice, file):
         print("calling ", self.__class__.__name__)
-        if data.ndim < 3:
+        # If data have only 2 dimensions windowing is not necessary
+        if data.ndim == 2:
             return data
         else:
-            windows = self._apply_window(data, self.bin_size)
+            windows = self.get_signal_window(data, self.window_size)
             return np.sum(np.square(windows), axis=1)
-
-
-class Raw(Transformer):
-    def __call__(self, data, slice, file):
-        print("calling ", self.__class__.__name__)
-        return np.moveaxis(data, 2, 0)
 
 
 class NoMethod(Transformer):
@@ -90,10 +89,11 @@ class NoMethod(Transformer):
         return data
 
 
-class DetectArtifacts(Transformer):
+class DetectArtifacts(WindowedTransformer):
     def __call__(self, data, slice, file):
         print("calling ", self.__class__.__name__)
-        if data.ndim < 3:
+        # If data have only 2 dimensions windowing is not necessary
+        if data.ndim == 2:
             return data
         else:
             up_limit = file.convert(file.max_volt) * 0.98
@@ -119,9 +119,9 @@ class Shutter(Transformer):
                 mask[i : i + delay] = 1
         masked_data = self.data[mask]
 
-        bin_size = self.ms_to_idx(file, 100)
+        window_size = self.ms_to_idx(file, 100)
         mea_viewer.MEAViewer().build_view(
-            file, data=masked_data, view_method="no_method", bin_size=bin_size
+            file, data=masked_data, view_method="no_method", window_size=window_size
         ).show()
 
         if self.callable:
