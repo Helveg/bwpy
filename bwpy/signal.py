@@ -57,7 +57,6 @@ class Amplitude(Transformer):
         self.bin_size = bin_size
 
     def __call__(self, data, slice, file):
-        print("calling ", self.__class__.__name__)
         if data.ndim < 3:
             return data
         else:
@@ -70,7 +69,6 @@ class Energy(Transformer):
         self.bin_size = bin_size
 
     def __call__(self, data, slice, file):
-        print("calling ", self.__class__.__name__)
         if data.ndim < 3:
             return data
         else:
@@ -80,19 +78,17 @@ class Energy(Transformer):
 
 class Raw(Transformer):
     def __call__(self, data, slice, file):
-        print("calling ", self.__class__.__name__)
         return np.moveaxis(data, 2, 0)
 
 
-class NoMethod(Transformer):
+class Noop(Transformer):
+    """Noop that doesn't transform the data at all."""
     def __call__(self, data, slice, file):
-        print("calling ", self.__class__.__name__)
         return data
 
 
 class DetectArtifacts(Transformer):
     def __call__(self, data, slice, file):
-        print("calling ", self.__class__.__name__)
         if data.ndim < 3:
             return data
         else:
@@ -109,7 +105,6 @@ class Shutter(Transformer):
         self.callable = callable
 
     def __call__(self, mask, slice, file):
-        print("calling ", self.__class__.__name__)
         if mask.ndim > 1:
             raise ValueError("mask must be a 1dim array.")
 
