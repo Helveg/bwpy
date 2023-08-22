@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 from ._hdf_annotations import requires_write_access
 from ._channels import Channel, ChannelGroup
+import functools
 
 __version__ = "0.0.1a0"
 
@@ -30,9 +31,11 @@ class File(h5py.File):
         if self.description.startswith("BRW"):
             self.__class__ = BRWFile
             self._type = "brw"
+            self.__post_init__()
         if self.description.startswith("BXR"):
             self.__class__ = BXRFile
             self._type = "bxr"
+            self.__post_init__()
 
     @property
     def description(self):
@@ -98,6 +101,13 @@ class File(h5py.File):
     def get_raw_user_info(self):
         return self["3BUserInfo"]
 
+    def convert(self, dv):
+        step_v = self.signal_inversion * (
+            (self.max_volt - self.min_volt) / 2**self.bit_depth
+        )
+        v_offset = self.signal_inversion * self.min_volt
+        return dv * step_v + v_offset
+
     @property
     def version(self):
         return self.attrs["Version"]
@@ -107,12 +117,126 @@ class File(h5py.File):
         return self.attrs["GUID"].decode()
 
 
-class BRWFile(File):
+class _Slicer:
+    def __init__(self, slice):
+        self._slice = slice
+
+
+class _TimeSlicer(_Slicer):
+    def __getitem__(self, instruction):
+        slice = self._slice._time_slice(instruction)
+        # self._file.n_frames =
+        return slice
+
+
+class _ChannelSlicer(_Slicer):
+    def __getitem__(self, instruction):
+        slice = self._slice._channel_slice(instruction)
+        # self._file.n_channel =
+        return slice
+
+
+class _Slice:
+    def __init__(self, file, channels=None, time=None):
+        self._file = file
+        if channels is None:
+            channels = file.channels[()].reshape(file.layout.shape)
+        self._channels = channels
+        if time is None:
+            time = slice(None)
+        self._time = time
+
+    @property
+    @functools.cache
+    def t(self):
+        return _TimeSlicer(self)
+
+    @property
+    @functools.cache
+    def ch(self):
+        return _ChannelSlicer(self)
+
+    @property
+    def channels(self):
+        return self._channels
+
+    @property
+    def data(self):
+        t_start, t_stop, t_step = self._time.indices(self._file.n_frames)
+        time_slice = slice(
+            t_start * self._file.n_channels,
+            t_stop * self._file.n_channels,
+            t_step * self._file.n_channels,
+        )
+        cols = self._file.layout.shape[1]
+        mask = np.array(
+            [(row - 1) * cols + (col - 1) for row, col in self.channels[()].ravel()]
+        )
+
+        if len(self._file.raw) < len(mask):
+            raise ValueError(f"You recorded less than 1 value per channel.")
+
+        start, stop, step = time_slice.indices(len(self._file.raw))
+        time_ind = np.tile(mask, ((stop - start) // step, 1))
+        for i, time_sample in enumerate(range(start, stop, step)):
+            time_ind[i, :] += time_sample
+        time_ind = time_ind.reshape(-1)
+        data = np.empty(time_ind.shape)
+        for i in range(0, len(time_ind), 1000):
+            end_slice = i + 1000
+            data[i:end_slice] = self._file.raw[time_ind[i:end_slice]]
+        return self._file.convert(data.reshape((len(mask), -1)))
+
+    def _slice_index(self):
+        return
+
+    def _time_slice(self, instruction):
+        if isinstance(instruction, int):
+            instruction = slice(instruction, instruction + 1, 1)
+        if isinstance(instruction, slice):
+            prev_start, prev_stop, prev_step = self._time.indices(self._file.n_frames)
+            _len = (prev_stop - prev_start) // prev_step
+            this_start, this_stop, this_step = instruction.indices(_len)
+            start = prev_start + this_start * prev_step
+            stop = prev_start + this_stop * prev_step
+            step = this_step * prev_step
+            # start: 1, end: 5, step: 1 --> Slice [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] into Slice [1, 2, 3, 4]
+            # start: 0, end: 7, step: 2 --> Slice [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] into Slice [0, 2, 4, 6]
+            # start: 5, end: -1, step: 4 --> Slice [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] into Slice [5, 9]
+            return _Slice(self._file, self._channels, slice(start, stop, step))
+
+    def _channel_slice(self, instruction):
+        return _Slice(self._file, self._channels[instruction], self._time)
+
+
+class BRWFile(File, _Slice):
+    def __post_init__(self):
+        _Slice.__init__(self, self)
+
     def _get_descr_prefix(self):
         return "BRW-File Level3"
 
+    @property
+    def channels(self):
+        return self["/3BRecInfo/3BMeaStreams/Raw/Chs"]
+
+    @property
+    def n_channels(self):
+        return self.channels.shape[0]
+
+    @property
+    def layout(self):
+        return self["/3BRecInfo/3BMeaChip/Layout"]
+
+    @property
+    def raw(self):
+        return self["/3BData/Raw"]
+
 
 class BXRFile(File):
+    def __post_init__(self):
+        pass
+
     @property
     def channel_groups(self):
         return self.get_channel_groups()
