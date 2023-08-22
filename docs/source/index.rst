@@ -40,8 +40,8 @@ The package allows you to slice the data in `.brw` files. The data can be restri
    import bwpy
 
    with bwpy("my_data.bwr", "r") as datafile:
+      # Return the slice of the first 10 temporal recordings with a step of 2
       datafile.t[0:10:2]
-      #will return the slice of the first 10 temporal recordings with a step of 2
 
 The data can be restricted to certain channels by indexing the `.ch` property like a two-dimensional array:
 
@@ -50,8 +50,8 @@ The data can be restricted to certain channels by indexing the `.ch` property li
    import bwpy
 
    with bwpy("my_data.bwr", "r") as datafile:
+      # Return the slice of the block of the first 10x10 channels
       datafile.ch[0:10, 0: 10]
-      #will return the slice of the block of the first 10x10 channels
 
 The obtained slices can themselves be sliced further:
 
@@ -60,8 +60,8 @@ The obtained slices can themselves be sliced further:
    import bwpy
 
    with bwpy("my_data.bwr", "r") as datafile:
+      # Return the slice of the first 10 temporal recordings of the first channel
       datafile.t[0:10].ch[0, 0]
-      #will return the slice of the first 10 temporal recordings of the first channel
 
 After slicing, the sliced data can be obtained by accessing the `data` property:
 
